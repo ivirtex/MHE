@@ -6,10 +6,7 @@
 #include "helpers.h"
 
 int loss(const std::vector<int>& subset, int target) {
-  int sum = 0;
-  for (int i : subset) {
-    sum += i;
-  }
+  int sum = std::accumulate(subset.begin(), subset.end(), 0);
 
   return std::abs(sum - target);
 }

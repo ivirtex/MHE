@@ -48,6 +48,9 @@ int main(int argc, char* argv[]) {
   auto end = std::chrono::high_resolution_clock::now();
   auto duration =
       std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+
+  std::print("Full search results:\n");
+
   std::print("Time taken: {} ms\n", duration.count());
 
   auto best_subset = get_subset(set, best_mask);
