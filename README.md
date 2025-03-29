@@ -1,1 +1,1 @@
-# Subset sum problem metahueristic algorithms
+# Subset sum problem metaheuristic algorithms

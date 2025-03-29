@@ -27,7 +27,7 @@ template <typename... Args>
 std::tuple<Args...> parse_args(int argc,
                                char* argv[],
                                std::string_view usage_message) {
-  constexpr size_t expected_args_num = sizeof...(Args);
+  constexpr int expected_args_num = sizeof...(Args);
   if (argc - 1 < expected_args_num) {
     std::print("Usage: {} {}", argv[0], usage_message);
     std::exit(1);
@@ -47,3 +47,6 @@ std::tuple<Args...> parse_args(int argc,
 }
 
 std::vector<std::string> read_file(const std::filesystem::path& file_path);
+
+int get_random_int(int min, int max);
+double get_random_double(double min, double max);

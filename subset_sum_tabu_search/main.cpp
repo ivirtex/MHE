@@ -1,6 +1,7 @@
 #include <chrono>
 #include <numeric>
 #include <print>
+#include <ranges>
 #include <vector>
 
 #include "helpers.h"
@@ -17,31 +18,32 @@ int main(int argc, char* argv[]) {
     set.push_back(std::stoi(line));
   }
 
+  // Measure time
   auto start = std::chrono::high_resolution_clock::now();
 
-  // Full search metaheuristic
+  // Tabu search metaheuristic
+  std::vector<std::vector<bool>> tabu_mask_list;
   std::vector<bool> best_mask;
   int best_loss = target;
+  int max_iterations = 100;
 
-  // Generate all possible masks
-  std::vector<std::vector<bool>> masks;
+  // Generate a random mask
+  auto mask = generate_random_solution_mask(set);
 
-  for (int i = 0; i < (1 << set.size()); ++i) {
-    std::vector<bool> mask;
-    for (size_t j = 0; j < set.size(); ++j) {
-      mask.push_back(i & (1 << j));
-    }
-    masks.push_back(mask);
-  }
+  // Tabu search
+  for (int iteration = 0; iteration < max_iterations; ++iteration) {
+    auto neighbor_mask = generate_near_neighbour_mask(mask);
+    auto curr_loss = loss(get_subset(set, mask), target);
 
-  // Evaluate all masks
-  for (const auto& mask : masks) {
-    auto subset = get_subset(set, mask);
-    auto curr_loss = loss(subset, target);
-
-    if (curr_loss < best_loss) {
-      best_loss = curr_loss;
-      best_mask = mask;
+    // Check if the neighbor is in the tabu list
+    if (std::ranges::find(tabu_mask_list, neighbor_mask) ==
+        tabu_mask_list.end()) {
+      if (curr_loss < best_loss) {
+        best_loss = curr_loss;
+        best_mask = mask;
+        mask = neighbor_mask;
+        tabu_mask_list.push_back(neighbor_mask);
+      }
     }
   }
 
@@ -49,6 +51,7 @@ int main(int argc, char* argv[]) {
   auto duration =
       std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
   std::print("Time taken: {} ms\n", duration.count());
+  std::print("Iterations: {}\n", max_iterations);
 
   auto best_subset = get_subset(set, best_mask);
   std::print("Best subset: {} (size: {})\n", best_subset, best_subset.size());
@@ -56,6 +59,4 @@ int main(int argc, char* argv[]) {
   std::print("Final value: {}\n",
              std::accumulate(best_subset.begin(), best_subset.end(), 0));
   std::print("Target: {}\n", target);
-
-  return 0;
 }

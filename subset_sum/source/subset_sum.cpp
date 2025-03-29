@@ -1,6 +1,9 @@
 #include "subset_sum.h"
 
 #include <iostream>
+#include <random>
+
+#include "helpers.h"
 
 int loss(const std::vector<int>& subset, int target) {
   int sum = 0;
@@ -26,14 +29,20 @@ std::vector<int> get_subset(const std::vector<int>& set,
 
 std::vector<int> generate_near_neighbour(const std::vector<int>& set,
                                          const std::vector<bool>& set_mask) {
-  // Modify the mask to generate a near neighbour.
+  auto new_mask = generate_near_neighbour_mask(set_mask);
+
+  return get_subset(set, new_mask);
+}
+
+std::vector<bool> generate_near_neighbour_mask(
+    const std::vector<bool>& set_mask) {
   std::vector<bool> new_mask = set_mask;
 
   // Find a random index to flip.
-  int flip_index = rand() % set.size();
+  int flip_index = get_random_int(0, set_mask.size() - 1);
   new_mask[flip_index] = !new_mask[flip_index];
 
-  return get_subset(set, new_mask);
+  return new_mask;
 }
 
 std::vector<bool> generate_random_solution_mask(const std::vector<int>& set) {

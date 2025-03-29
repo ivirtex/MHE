@@ -17,31 +17,30 @@ int main(int argc, char* argv[]) {
     set.push_back(std::stoi(line));
   }
 
+  // Measure time
   auto start = std::chrono::high_resolution_clock::now();
 
-  // Full search metaheuristic
+  // Hill climbing metaheuristic
   std::vector<bool> best_mask;
   int best_loss = target;
 
-  // Generate all possible masks
-  std::vector<std::vector<bool>> masks;
+  // Generate a random mask
+  auto mask = generate_random_solution_mask(set);
 
-  for (int i = 0; i < (1 << set.size()); ++i) {
-    std::vector<bool> mask;
-    for (size_t j = 0; j < set.size(); ++j) {
-      mask.push_back(i & (1 << j));
-    }
-    masks.push_back(mask);
-  }
+  // Hill climbing
+  bool improved = true;
 
-  // Evaluate all masks
-  for (const auto& mask : masks) {
-    auto subset = get_subset(set, mask);
-    auto curr_loss = loss(subset, target);
+  while (improved) {
+    improved = false;
+
+    auto neighbor_mask = generate_near_neighbour_mask(mask);
+    auto curr_loss = loss(get_subset(set, mask), target);
 
     if (curr_loss < best_loss) {
       best_loss = curr_loss;
       best_mask = mask;
+      mask = neighbor_mask;
+      improved = true;
     }
   }
 
@@ -56,6 +55,4 @@ int main(int argc, char* argv[]) {
   std::print("Final value: {}\n",
              std::accumulate(best_subset.begin(), best_subset.end(), 0));
   std::print("Target: {}\n", target);
-
-  return 0;
 }

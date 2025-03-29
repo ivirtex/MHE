@@ -10,3 +10,7 @@ target_sources(subset_sum PRIVATE
 target_include_directories(subset_sum
     PUBLIC include
 )
+
+target_link_libraries(subset_sum PRIVATE
+    helpers
+)

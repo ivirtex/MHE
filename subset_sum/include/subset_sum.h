@@ -10,9 +10,14 @@ int loss(const std::vector<int>& subset, int target);
 std::vector<int> get_subset(const std::vector<int>& set,
                             const std::vector<bool>& set_mask);
 
-/// \brief Generates a near neighbour of a subset by flipping a random mask bit.
+/// \brief Generates a near neighbour of a subset by flipping a random mask bit
+/// and returning the new subset.
 std::vector<int> generate_near_neighbour(const std::vector<int>& set,
                                          const std::vector<bool>& set_mask);
+
+/// \brief Generates a near neighbour mask by flipping a random bit in the mask.
+std::vector<bool> generate_near_neighbour_mask(
+    const std::vector<bool>& set_mask);
 
 /// \brief Generates a random solution mask (random subset).
 std::vector<bool> generate_random_solution_mask(const std::vector<int>& set);
