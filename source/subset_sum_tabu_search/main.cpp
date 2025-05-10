@@ -10,8 +10,9 @@
 constexpr int MAX_ITERATIONS = 100000;
 
 int main(int argc, char* argv[]) {
-  auto [file, target] =
-      parse_args<std::string, int>(argc, argv, "<file> <target>");
+  auto [file, target, max_tabu_size] =
+      parse_args<std::string, int, std::optional<int>>(
+          argc, argv, "<file> <target> <max_tabu_size>");
 
   auto setFile = read_file(file);
 
@@ -25,7 +26,13 @@ int main(int argc, char* argv[]) {
 
   // Tabu search metaheuristic
   std::vector<std::vector<bool>> tabu_mask_list;
-  size_t max_tabu_list_size = 100;
+  size_t max_tabu_list_size = 0;
+  bool use_max_tabu_size = false;
+
+  if (max_tabu_size.has_value()) {
+    max_tabu_list_size = max_tabu_size.value();
+    use_max_tabu_size = true;
+  }
 
   auto best_mask = generate_random_solution_mask(set);
   auto best_loss = loss(get_subset(set, best_mask), target);
@@ -48,8 +55,11 @@ int main(int argc, char* argv[]) {
       }
 
       tabu_mask_list.push_back(neighbor_mask);
-      if (tabu_mask_list.size() > max_tabu_list_size) {
-        tabu_mask_list.erase(tabu_mask_list.begin());
+
+      if (use_max_tabu_size) {
+        if (tabu_mask_list.size() > max_tabu_list_size) {
+          tabu_mask_list.erase(tabu_mask_list.begin());
+        }
       }
     }
   }
