@@ -7,6 +7,8 @@
 #include "helpers.h"
 #include "subset_sum.h"
 
+constexpr int MAX_ITERATIONS = 100000;
+
 int main(int argc, char* argv[]) {
   auto [file, target] =
       parse_args<std::string, int>(argc, argv, "<file> <target>");
@@ -23,22 +25,31 @@ int main(int argc, char* argv[]) {
 
   // Tabu search metaheuristic
   std::vector<std::vector<bool>> tabu_mask_list;
-  auto mask = generate_random_solution_mask(set);
-  int best_loss = std::numeric_limits<int>::max();
-  int max_iterations = 500;
+  size_t max_tabu_list_size = 100;
 
-  // Tabu search
-  for (int iteration = 0; iteration < max_iterations; ++iteration) {
-    auto neighbor_mask = generate_near_neighbour_mask(mask);
+  auto best_mask = generate_random_solution_mask(set);
+  auto best_loss = loss(get_subset(set, best_mask), target);
+
+  auto current_mask = best_mask;
+  for (int iteration = 0; iteration < MAX_ITERATIONS; ++iteration) {
+    auto neighbor_mask = generate_near_neighbour_mask(current_mask);
     auto curr_loss = loss(get_subset(set, neighbor_mask), target);
 
     // Check if the neighbor is in the tabu list
-    if (std::ranges::find(tabu_mask_list, neighbor_mask) ==
-        tabu_mask_list.end()) {
+    bool in_tabu_list = std::ranges::find(tabu_mask_list, neighbor_mask) !=
+                        tabu_mask_list.end();
+
+    if (!in_tabu_list || curr_loss < best_loss) {
+      current_mask = neighbor_mask;
+
       if (curr_loss < best_loss) {
         best_loss = curr_loss;
-        mask = neighbor_mask;
-        tabu_mask_list.push_back(neighbor_mask);
+        best_mask = neighbor_mask;
+      }
+
+      tabu_mask_list.push_back(neighbor_mask);
+      if (tabu_mask_list.size() > max_tabu_list_size) {
+        tabu_mask_list.erase(tabu_mask_list.begin());
       }
     }
   }
@@ -50,9 +61,9 @@ int main(int argc, char* argv[]) {
   std::print("Tabu search results:\n");
 
   std::print("Time taken: {} ms\n", duration.count());
-  std::print("Iterations: {}\n", max_iterations);
+  std::print("Iterations: {}\n", MAX_ITERATIONS);
 
-  auto best_subset = get_subset(set, mask);
+  auto best_subset = get_subset(set, best_mask);
   std::print("Best subset: {} (size: {})\n", best_subset, best_subset.size());
   std::print("Best loss: {}\n", best_loss);
   std::print("Final value: {}\n",
