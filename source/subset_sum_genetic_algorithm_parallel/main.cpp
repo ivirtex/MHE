@@ -150,6 +150,7 @@ int main(int argc, char* argv[]) {
   solve(
       "Genetic parallel", file, target,
       [&](const std::vector<int>& set, int target) {
+        std::vector<double> fitness_history;
         std::vector<std::vector<bool>> population(population_count);
 
         // Generate initial population in parallel
@@ -176,6 +177,8 @@ int main(int argc, char* argv[]) {
 
                 return fitness_value;
               });
+
+          fitness_history.push_back(best_fitness);
 
           std::vector<std::vector<bool>> offspring;
           offspring.reserve(population_count);
@@ -209,6 +212,7 @@ int main(int argc, char* argv[]) {
 
         SubsetSumResult result{
             .best_subset = get_subset(set, best_mask),
+            .fitness_history = fitness_history,
             .iterations = generation,
         };
 

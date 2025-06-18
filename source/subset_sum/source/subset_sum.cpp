@@ -88,15 +88,32 @@ void solve(const std::string& algoritm_name,
   SubsetSumResult result = algoritm(set, target);
   auto end = std::chrono::high_resolution_clock::now();
 
-  std::print("Algorithm: {}\n", algoritm_name);
-
   std::chrono::duration<double> elapsed = end - start;
-  std::print("Time taken: {} ms\n", elapsed.count() * 1000);
-  std::print("Iterations/Generations: {}\n", result.iterations);
-  std::print("Best subset: {} (size: {})\n", result.best_subset,
-             result.best_subset.size());
-  std::print("Final value: {}\n", std::accumulate(result.best_subset.begin(),
-                                                  result.best_subset.end(), 0));
-  std::print("Target: {}\n", target);
-  std::print("Loss: {}\n", loss(result.best_subset, target));
+  int final_value =
+      std::accumulate(result.best_subset.begin(), result.best_subset.end(), 0);
+  int loss_value = loss(result.best_subset, target);
+
+  std::cout << "{\n";
+  std::cout << "  \"algorithm\": \"" << algoritm_name << "\",\n";
+  std::cout << "  \"time_ms\": " << (elapsed.count() * 1000) << ",\n";
+  std::cout << "  \"iterations\": " << result.iterations << ",\n";
+  std::cout << "  \"best_subset\": [";
+  for (size_t i = 0; i < result.best_subset.size(); ++i) {
+    std::cout << result.best_subset[i];
+    if (i + 1 < result.best_subset.size())
+      std::cout << ", ";
+  }
+  std::cout << "],\n";
+  std::cout << "  \"fitness_history\": [";
+  for (size_t i = 0; i < result.fitness_history.size(); ++i) {
+    std::cout << result.fitness_history[i];
+    if (i + 1 < result.fitness_history.size())
+      std::cout << ", ";
+  }
+  std::cout << "],\n";
+  std::cout << "  \"subset_size\": " << result.best_subset.size() << ",\n";
+  std::cout << "  \"final_value\": " << final_value << ",\n";
+  std::cout << "  \"target\": " << target << ",\n";
+  std::cout << "  \"loss\": " << loss_value << "\n";
+  std::cout << "}\n";
 }

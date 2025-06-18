@@ -146,6 +146,7 @@ int main(int argc, char* argv[]) {
   };
 
   solve("Genetic", file, target, [&](const std::vector<int>& set, int target) {
+    std::vector<double> fitness_history;
     std::vector<std::vector<bool>> population;
 
     for (int i = 0; i < population_count; ++i) {
@@ -168,6 +169,8 @@ int main(int argc, char* argv[]) {
           best_mask = mask;
         }
       }
+
+      fitness_history.push_back(best_fitness);
 
       std::vector<std::vector<bool>> offspring;
 
@@ -199,6 +202,7 @@ int main(int argc, char* argv[]) {
 
     SubsetSumResult result{
         .best_subset = get_subset(set, best_mask),
+        .fitness_history = fitness_history,
         .iterations = generation,
     };
 

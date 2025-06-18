@@ -12,6 +12,7 @@ int main(int argc, char* argv[]) {
 
   solve("Full search", file, target,
         [&](const std::vector<int>& set, int target) {
+          std::vector<double> fitness_history;
           std::vector<bool> best_mask;
           int best_loss = target;
 
@@ -34,11 +35,14 @@ int main(int argc, char* argv[]) {
             if (curr_loss < best_loss) {
               best_loss = curr_loss;
               best_mask = mask;
+
+              fitness_history.push_back(fitness(subset, target));
             }
           }
 
           SubsetSumResult result{
               .best_subset = get_subset(set, best_mask),
+              .fitness_history = fitness_history,
               .iterations = static_cast<int>(masks.size()),
           };
 

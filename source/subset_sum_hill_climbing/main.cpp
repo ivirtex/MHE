@@ -12,6 +12,8 @@ int main(int argc, char* argv[]) {
 
   solve("Hill climbing", file, target,
         [&](const std::vector<int>& set, int target) {
+          std::vector<double> fitness_history;
+
           int best_loss = std::numeric_limits<int>::max();
           auto mask = generate_random_solution_mask(set);
 
@@ -38,10 +40,13 @@ int main(int argc, char* argv[]) {
               mask = best_neighbor_mask;
               improved = true;
             }
+
+            fitness_history.push_back(fitness(get_subset(set, mask), target));
           }
 
           SubsetSumResult result{
               .best_subset = get_subset(set, mask),
+              .fitness_history = fitness_history,
               .iterations = 1,  // Hill climbing is a single iteration process
           };
 

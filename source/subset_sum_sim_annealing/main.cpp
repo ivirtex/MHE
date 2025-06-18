@@ -7,7 +7,7 @@
 #include "helpers.h"
 #include "subset_sum.h"
 
-constexpr int MAX_ITERATIONS = 1000;
+constexpr int MAX_ITERATIONS = 10000;
 constexpr double COOLING_RATE = 0.99;
 constexpr double MIN_TEMP = 1.0;
 
@@ -17,10 +17,10 @@ int main(int argc, char* argv[]) {
 
   solve("Simulated annealing", file, target,
         [&](const std::vector<int>& set, int target) {
+          std::vector<double> fitness_history;
+
           std::vector<bool> current_mask = generate_random_solution_mask(set);
           int current_loss = loss(get_subset(set, current_mask), target);
-          std::vector<bool> best_mask = current_mask;
-          int best_loss = current_loss;
 
           int iterations = 0;
           double temperature = 1000.0;
@@ -41,22 +41,20 @@ int main(int argc, char* argv[]) {
             double acceptance_prob =
                 std::exp((current_loss - new_loss) / temperature);
 
-            if (new_loss < current_loss ||
-                get_random_double(0.0, 1.0) < acceptance_prob) {
+            if (get_random_double(0.0, 1.0) < acceptance_prob) {
               current_mask = new_mask;
               current_loss = new_loss;
-
-              if (new_loss < best_loss) {
-                best_mask = new_mask;
-                best_loss = new_loss;
-              }
             }
+
+            fitness_history.push_back(
+                fitness(get_subset(set, current_mask), target));
 
             iterations++;
           }
 
           SubsetSumResult result{
-              .best_subset = get_subset(set, best_mask),
+              .best_subset = get_subset(set, current_mask),
+              .fitness_history = fitness_history,
               .iterations = iterations,
           };
 

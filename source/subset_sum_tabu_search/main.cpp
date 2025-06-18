@@ -18,6 +18,8 @@ int main(int argc, char* argv[]) {
   solve(
       "Tabu search", set_file, target,
       [&](const std::vector<int>& set, int target) {
+        std::vector<double> fitness_history;
+
         std::vector<std::vector<bool>> tabu_mask_list;
         size_t max_tabu_list_size = 0;
         bool use_max_tabu_size = false;
@@ -62,10 +64,14 @@ int main(int argc, char* argv[]) {
           if (use_max_tabu_size && tabu_mask_list.size() > max_tabu_list_size) {
             tabu_mask_list.erase(tabu_mask_list.begin());
           }
+
+          fitness_history.push_back(
+              fitness(get_subset(set, best_mask), target));
         }
 
         SubsetSumResult result{
             .best_subset = get_subset(set, best_mask),
+            .fitness_history = fitness_history,
             .iterations = MAX_ITERATIONS,
         };
 

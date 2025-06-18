@@ -32,6 +32,7 @@ std::vector<bool> generate_random_solution_mask(const std::vector<int>& set);
 
 struct SubsetSumResult {
   std::vector<int> best_subset;
+  std::vector<double> fitness_history;
   int iterations;
 };
 
