@@ -15,10 +15,12 @@ import matplotlib.pyplot as plt
 
 path_to_executables = "./../../build/bin"
 path_to_sets = "./../../sets"
-target = 25000
+target = 2500
 
 
 def run_program(path: str, args: list) -> dict:
+    print(f"Running {path} with arguments: {args}")
+
     result = subprocess.run([path] + args, capture_output=True, text=True)
 
     if result.returncode != 0:
@@ -30,7 +32,7 @@ def run_program(path: str, args: list) -> dict:
 
 
 def run_algorithm(algorithm: str, target: int, additional_args: list = []) -> dict:
-    set_name = "medium_test_set"  # Default set name, can be changed
+    set_name = "small_test_set"  # Default set name, can be changed
 
     path = f"{path_to_executables}/{algorithm}.exe"
     args = [f"{path_to_sets}/{set_name}", str(target)] + additional_args
@@ -39,15 +41,6 @@ def run_algorithm(algorithm: str, target: int, additional_args: list = []) -> di
 
 
 def main():
-    # algorithms = [
-    #     "subset_sum_full_search",
-    #     "subset_sum_genetic_algorithm_parallel"
-    #     "subset_sum_genetic_algorithm"
-    #     "subset_sum_hill_climbing",
-    #     "subset_sum_sim_annealing",
-    #     "subset_sum_tabu_search",
-    # ]
-
     # run genetic algorithm with different permutations of parameters: population_count, single_point/two_point crossover, single_bit_flip/probable_bit_flip mutation, max_generations/fitness_threshold
     ga_fitness_threshold_results = []
     ga_fitness_threshold_params = [
@@ -194,6 +187,12 @@ def main():
         ["300", "two_point", "single_bit_flip", "fitness_threshold"],
     )
 
+    ga_parallel_best_result = run_algorithm(
+        "subset_sum_genetic_algorithm_parallel",
+        target,
+        ["300", "two_point", "single_bit_flip", "fitness_threshold"],
+    )
+
     # full search result
     full_search_result = run_algorithm("subset_sum_full_search", target)
 
@@ -201,7 +200,30 @@ def main():
     hill_climbing_result = run_algorithm("subset_sum_hill_climbing", target)
 
     # run simulated annealing algorithm
-    simulated_annealing_result = run_algorithm("subset_sum_sim_annealing", target)
+    simulated_annealing_linear_result = run_algorithm(
+        "subset_sum_sim_annealing", target, ["linear"]
+    )
+
+    simulated_annealing_logarithmic_result = run_algorithm(
+        "subset_sum_sim_annealing", target, ["logarithmic"]
+    )
+
+    # plot simulated annealing results
+    plt.figure(figsize=(10, 6))
+    plt.plot(
+        simulated_annealing_linear_result["fitness_history"],
+        label="Simulated Annealing (Linear Cooling)",
+    )
+    plt.plot(
+        simulated_annealing_logarithmic_result["fitness_history"],
+        label="Simulated Annealing (Logarithmic Cooling)",
+    )
+    plt.title("Simulated Annealing Fitness History")
+    plt.xlabel("Iteration")
+    plt.ylabel("Fitness")
+    plt.legend()
+    plt.grid()
+    plt.show()
 
     # run tabu search algorithm
     tabu_search_max_tabu_result = run_algorithm(
@@ -235,7 +257,8 @@ def main():
     results = {
         "full_search": full_search_result,
         "hill_climbing": hill_climbing_result,
-        "simulated_annealing": simulated_annealing_result,
+        "simulated_annealing_linear": simulated_annealing_linear_result,
+        "simulated_annealing_logarithmic": simulated_annealing_logarithmic_result,
         "tabu_best": tabu_search_best_result,
         "ga_best": ga_best_result,
     }
@@ -252,6 +275,27 @@ def main():
     plt.ylabel("Fitness")
     plt.legend()
     plt.grid()
+    plt.show()
+
+    # plot execution times
+    plt.figure(figsize=(10, 6))
+    execution_times = {
+        "Full Search": full_search_result["time_ms"],
+        "Hill Climbing": hill_climbing_result["time_ms"],
+        "Simulated Annealing (Linear)": simulated_annealing_linear_result["time_ms"],
+        "Simulated Annealing (Logarithmic)": simulated_annealing_logarithmic_result[
+            "time_ms"
+        ],
+        "Tabu Search (Best)": tabu_search_best_result["time_ms"],
+        "Genetic Algorithm (Best)": ga_best_result["time_ms"],
+        "Parallel Genetic Algorithm (Best)": ga_parallel_best_result["time_ms"],
+    }
+    plt.bar(execution_times.keys(), execution_times.values())
+    plt.title("Execution Times of Algorithms")
+    plt.xlabel("Algorithm")
+    plt.ylabel("Time (ms)")
+    plt.xticks(rotation=45)
+    plt.grid(axis="y")
     plt.show()
 
 

@@ -13,16 +13,20 @@ int main(int argc, char* argv[]) {
   solve("Full search", file, target,
         [&](const std::vector<int>& set, int target) {
           std::vector<double> fitness_history;
+
           std::vector<bool> best_mask;
           int best_loss = target;
 
           // Generate all possible masks
           std::vector<std::vector<bool>> masks;
 
-          for (int i = 0; i < (1 << set.size()); ++i) {
-            std::vector<bool> mask;
-            for (size_t j = 0; j < set.size(); ++j) {
-              mask.push_back(i & (1 << j));
+          // Generate all masks (2^set_size)
+          uint64_t all_combinations = 1ULL << set.size();
+
+          for (uint64_t i = 0; i < all_combinations; ++i) {
+            std::vector<bool> mask(set.size());
+            for (int j = 0; j < set.size(); ++j) {
+              mask[j] = (i & (1ULL << j)) != 0;
             }
             masks.push_back(mask);
           }
