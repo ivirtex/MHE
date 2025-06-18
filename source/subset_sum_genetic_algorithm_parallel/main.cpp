@@ -165,7 +165,7 @@ int main(int argc, char* argv[]) {
 
           // Use parallel execution to calculate fitness values
           std::transform(
-              std::execution::par, population.begin(), population.end(),
+              std::execution::par_unseq, population.begin(), population.end(),
               population_fitness.begin(), [&](const std::vector<bool>& mask) {
                 double fitness_value = fitness(get_subset(set, mask), target);
 
@@ -177,30 +177,6 @@ int main(int argc, char* argv[]) {
                 return fitness_value;
               });
 
-          struct alignas(std::hardware_destructive_interference_size)
-              ChildrenPair {
-            std::vector<bool> first_child;
-            std::vector<bool> second_child;
-          };
-
-          // Generate offspring pairs in parallel
-          std::vector<ChildrenPair> children_pairs(population_count / 2);
-
-          std::generate(
-              std::execution::par, children_pairs.begin(), children_pairs.end(),
-              [&]() {
-                auto p1 = tournament_selection(population, population_fitness);
-                auto p2 = tournament_selection(population, population_fitness);
-                auto [c1, c2] = crossover(p1, p2, crossover_method);
-                c1 = mutate(c1, mutation_method);
-                c2 = mutate(c2, mutation_method);
-
-                return ChildrenPair{
-                    .first_child = std::move(c1),
-                    .second_child = std::move(c2),
-                };
-              });
-
           std::vector<std::vector<bool>> offspring;
           offspring.reserve(population_count);
 
@@ -208,11 +184,23 @@ int main(int argc, char* argv[]) {
             offspring.push_back(best_mask);
           }
 
-          for (auto [first_child, second_child] : children_pairs) {
-            offspring.push_back(std::move(first_child));
+          while (offspring.size() < population_count) {
+            // Select parents using tournament selection
+            auto parent1 = tournament_selection(population, population_fitness);
+            auto parent2 = tournament_selection(population, population_fitness);
 
-            if (offspring.size() < population_count)
-              offspring.push_back(std::move(second_child));
+            // Crossover
+            auto [child1, child2] =
+                crossover(parent1, parent2, crossover_method);
+
+            // Mutate children
+            child1 = mutate(child1, mutation_method);
+            child2 = mutate(child2, mutation_method);
+
+            offspring.push_back(child1);
+            if (offspring.size() < population_count) {
+              offspring.push_back(child2);
+            }
           }
 
           population = std::move(offspring);

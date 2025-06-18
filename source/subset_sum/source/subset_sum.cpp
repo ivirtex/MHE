@@ -7,13 +7,13 @@
 #include "helpers.h"
 
 int loss(const std::vector<int>& subset, int target) {
-  int sum = std::accumulate(subset.begin(), subset.end(), 0);
+  int sum = std::reduce(subset.begin(), subset.end(), 0);
 
   return std::abs(sum - target);
 }
 
-float fitness(const std::vector<int>& subset, int target) {
-  int sum = std::accumulate(subset.begin(), subset.end(), 0);
+double fitness(const std::vector<int>& subset, int target) {
+  int sum = std::reduce(subset.begin(), subset.end(), 0);
 
   return 1.0 / (1 + std::abs(sum - target));
 }

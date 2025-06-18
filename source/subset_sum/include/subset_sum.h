@@ -9,7 +9,7 @@
 int loss(const std::vector<int>& subset, int target);
 
 /// \brief Fitness function for the subset sum problem.
-float fitness(const std::vector<int>& subset, int target);
+double fitness(const std::vector<int>& subset, int target);
 
 /// \brief Returns the subset of the set based on the mask.
 std::vector<int> get_subset(const std::vector<int>& set,
