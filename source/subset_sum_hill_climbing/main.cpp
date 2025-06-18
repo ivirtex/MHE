@@ -20,12 +20,22 @@ int main(int argc, char* argv[]) {
           while (improved) {
             improved = false;
 
-            auto neighbor_mask = generate_near_neighbour_mask(mask);
-            auto curr_loss = loss(get_subset(set, neighbor_mask), target);
+            auto neighbor_masks = generate_near_neighbour_masks(mask);
+            std::vector<bool> best_neighbor_mask;
+            int best_neighbor_loss = std::numeric_limits<int>::max();
 
-            if (curr_loss < best_loss) {
-              best_loss = curr_loss;
-              mask = neighbor_mask;
+            for (const auto& neighbor_mask : neighbor_masks) {
+              auto curr_loss = loss(get_subset(set, neighbor_mask), target);
+
+              if (curr_loss < best_neighbor_loss) {
+                best_neighbor_loss = curr_loss;
+                best_neighbor_mask = neighbor_mask;
+              }
+            }
+
+            if (best_neighbor_loss < best_loss) {
+              best_loss = best_neighbor_loss;
+              mask = best_neighbor_mask;
               improved = true;
             }
           }
