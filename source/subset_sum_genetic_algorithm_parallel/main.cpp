@@ -1,4 +1,6 @@
 #include <chrono>
+#include <execution>
+#include <new>
 #include <numeric>
 #include <print>
 #include <ranges>
@@ -145,63 +147,83 @@ int main(int argc, char* argv[]) {
     return false;
   };
 
-  solve("Genetic", file, target, [&](const std::vector<int>& set, int target) {
-    std::vector<std::vector<bool>> population;
+  solve(
+      "Genetic parallel", file, target,
+      [&](const std::vector<int>& set, int target) {
+        std::vector<std::vector<bool>> population(population_count);
 
-    for (int i = 0; i < population_count; ++i) {
-      population.push_back(generate_random_solution_mask(set));
-    }
+        // Generate initial population in parallel
+        std::generate(std::execution::par, population.begin(), population.end(),
+                      [&]() { return generate_random_solution_mask(set); });
 
-    int generation = 0;
-    double best_fitness = 0.0;
-    std::vector<bool> best_mask;
+        int generation = 0;
+        double best_fitness = 0.0;
+        std::vector<bool> best_mask;
 
-    while (!should_terminate(generation, best_fitness)) {
-      // Evaluate fitness
-      std::vector<double> population_fitness;
-      for (const auto& mask : population) {
-        double fitness_value = fitness(get_subset(set, mask), target);
-        population_fitness.push_back(fitness_value);
+        while (!should_terminate(generation, best_fitness)) {
+          std::vector<double> population_fitness(population_count, 0.0);
 
-        if (fitness_value > best_fitness) {
-          best_fitness = fitness_value;
-          best_mask = mask;
+          // Use parallel execution to calculate fitness values
+          std::transform(
+              std::execution::par, population.begin(), population.end(),
+              population_fitness.begin(), [&](const std::vector<bool>& mask) {
+                double fitness_value = fitness(get_subset(set, mask), target);
+
+                if (fitness_value > best_fitness) {
+                  best_fitness = fitness_value;
+                  best_mask = mask;
+                }
+
+                return fitness_value;
+              });
+
+          struct alignas(std::hardware_destructive_interference_size)
+              ChildrenPair {
+            std::vector<bool> first_child;
+            std::vector<bool> second_child;
+          };
+
+          // Generate offspring pairs in parallel
+          std::vector<ChildrenPair> children_pairs(population_count / 2);
+
+          std::generate(
+              std::execution::par, children_pairs.begin(), children_pairs.end(),
+              [&]() {
+                auto p1 = tournament_selection(population, population_fitness);
+                auto p2 = tournament_selection(population, population_fitness);
+                auto [c1, c2] = crossover(p1, p2, crossover_method);
+                c1 = mutate(c1, mutation_method);
+                c2 = mutate(c2, mutation_method);
+
+                return ChildrenPair{
+                    .first_child = std::move(c1),
+                    .second_child = std::move(c2),
+                };
+              });
+
+          std::vector<std::vector<bool>> offspring;
+          offspring.reserve(population_count);
+
+          if (!best_mask.empty()) {
+            offspring.push_back(best_mask);
+          }
+
+          for (auto [first_child, second_child] : children_pairs) {
+            offspring.push_back(std::move(first_child));
+
+            if (offspring.size() < population_count)
+              offspring.push_back(std::move(second_child));
+          }
+
+          population = std::move(offspring);
+          generation++;
         }
-      }
 
-      std::vector<std::vector<bool>> offspring;
+        SubsetSumResult result{
+            .best_subset = get_subset(set, best_mask),
+            .iterations = generation,
+        };
 
-      if (!best_mask.empty()) {
-        offspring.push_back(best_mask);
-      }
-
-      while (offspring.size() < population_count) {
-        // Select parents using tournament selection
-        auto parent1 = tournament_selection(population, population_fitness);
-        auto parent2 = tournament_selection(population, population_fitness);
-
-        // Crossover
-        auto [child1, child2] = crossover(parent1, parent2, crossover_method);
-
-        // Mutate children
-        child1 = mutate(child1, mutation_method);
-        child2 = mutate(child2, mutation_method);
-
-        offspring.push_back(child1);
-        if (offspring.size() < population_count) {
-          offspring.push_back(child2);
-        }
-      }
-
-      population = std::move(offspring);
-      generation++;
-    }
-
-    SubsetSumResult result{
-        .best_subset = get_subset(set, best_mask),
-        .iterations = generation,
-    };
-
-    return result;
-  });
+        return result;
+      });
 }

@@ -15,61 +15,51 @@ int main(int argc, char* argv[]) {
   auto [file, target] =
       parse_args<std::string, int>(argc, argv, "<file> <target>");
 
-  auto setFile = read_file(file);
+  solve("Simulated annealing", file, target,
+        [&](const std::vector<int>& set, int target) {
+          std::vector<bool> current_mask = generate_random_solution_mask(set);
+          int current_loss = loss(get_subset(set, current_mask), target);
+          std::vector<bool> best_mask = current_mask;
+          int best_loss = current_loss;
 
-  std::vector<int> set;
-  for (const auto& line : setFile) {
-    set.push_back(std::stoi(line));
-  }
+          int iterations = 0;
+          double temperature = 1000.0;
+          double cooling_rate = COOLING_RATE;
+          double min_temp = MIN_TEMP;
 
-  // Measure time
-  auto start = std::chrono::high_resolution_clock::now();
+          for (int iteration = 0; iteration < MAX_ITERATIONS; ++iteration) {
+            // Decrease temperature
+            temperature *= cooling_rate;
+            if (temperature < min_temp)
+              break;
 
-  // Simulated annealing metaheuristic
-  auto best_mask = generate_random_solution_mask(set);
-  int best_loss = loss(get_subset(set, best_mask), target);
-  auto mask = best_mask;
+            // Generate a neighbour
+            auto new_mask = generate_near_neighbour_mask(current_mask);
+            int new_loss = loss(get_subset(set, new_mask), target);
 
-  int total_iterations = 0;
-  double temperature = 1000.0;
+            // Acceptance probability based on current_loss
+            double acceptance_prob =
+                std::exp((current_loss - new_loss) / temperature);
 
-  for (; total_iterations < MAX_ITERATIONS; ++total_iterations) {
-    auto curr_loss = loss(get_subset(set, mask), target);
+            if (new_loss < current_loss ||
+                get_random_double(0.0, 1.0) < acceptance_prob) {
+              current_mask = new_mask;
+              current_loss = new_loss;
 
-    auto neighbor_mask = generate_near_neighbour_mask(mask);
-    auto neighbor_loss = loss(get_subset(set, neighbor_mask), target);
+              if (new_loss < best_loss) {
+                best_mask = new_mask;
+                best_loss = new_loss;
+              }
+            }
 
-    bool should_accept = std::exp((curr_loss - neighbor_loss) / temperature) >
-                         get_random_double(0, 1);
-    if (should_accept) {
-      mask = neighbor_mask;
+            iterations++;
+          }
 
-      if (neighbor_loss < best_loss) {
-        best_loss = neighbor_loss;
-        best_mask = neighbor_mask;
-      }
-    }
+          SubsetSumResult result{
+              .best_subset = get_subset(set, best_mask),
+              .iterations = iterations,
+          };
 
-    // Cool down the temperature
-    temperature *= COOLING_RATE;
-    if (temperature < MIN_TEMP) {
-      break;
-    }
-  }
-
-  auto end = std::chrono::high_resolution_clock::now();
-  auto duration =
-      std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-
-  std::print("Simulated annealing results:\n");
-
-  std::print("Time taken: {} ms\n", duration.count());
-  std::print("Iterations: {}\n", total_iterations);
-
-  auto best_subset = get_subset(set, best_mask);
-  std::print("Best subset: {} (size: {})\n", best_subset, best_subset.size());
-  std::print("Best loss: {}\n", best_loss);
-  std::print("Final value: {}\n",
-             std::accumulate(best_subset.begin(), best_subset.end(), 0));
-  std::print("Target: {}\n", target);
+          return result;
+        });
 }
