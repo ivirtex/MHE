@@ -34,7 +34,7 @@ def run_program(path: str, args: list) -> dict:
 def run_algorithm(algorithm: str, target: int, additional_args: list = []) -> dict:
     set_name = "small_test_set"  # Default set name, can be changed
 
-    path = f"{path_to_executables}/{algorithm}.exe"
+    path = f"{path_to_executables}/{algorithm}"
     args = [f"{path_to_sets}/{set_name}", str(target)] + additional_args
 
     return run_program(path, args)

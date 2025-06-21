@@ -5,7 +5,7 @@ function(configure_target target)
     target_compile_options(${target} PRIVATE
         $<$<CXX_COMPILER_ID:MSVC>:/W4 /permissive->
         $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra -pedantic>
-        $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -pedantic>
+        $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -pedantic -fexperimental-library>
     )
 
     target_compile_features(${target} PRIVATE cxx_std_23)
